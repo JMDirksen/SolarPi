@@ -26,14 +26,24 @@ sd=${sd#0}
 raspi-gpio set $gpio_pin op  # Setup GPIO pin as Output
 raspi-gpio set $gpio_pin dh  # Set GPIO pin High (switch = off)
 
-# Check if sun up is after time on
-[[ $su -gt $time_on ]] && {
-  [[ $now -eq $time_on ]] && raspi-gpio set $gpio_pin dl  # Switch on @ time on
-  [[ $now -eq $su ]] && raspi-gpio set $gpio_pin dh       # Switch off @ sun up
+[[ $su -gt $time_on ]] && {            # Sun up after time on
+  [[ $now -eq $time_on ]] && {         # @ time on
+    echo "$now Switch on (time on)"
+    raspi-gpio set $gpio_pin dl        # Switch on
+  }
+  [[ $now -eq $su ]] && {              # @ sun up
+    echo "$now Switch off (sun up)"
+    raspi-gpio set $gpio_pin dh        # Switch off
+  }
 }
 
-# Check if sun down is before time off
-[[ $sd -lt $time_off ]] && {
-  [[ $now -eq $sd ]] && raspi-gpio set $gpio_pin dl        # Switch on @ sun down
-  [[ $now -eq $time_off ]] && raspi-gpio set $gpio_pin dh  # Switch off @ time off
+[[ $sd -lt $time_off ]] && {           # Sun down before time off
+  [[ $now -eq $sd ]] && {              # @ sun down
+    echo "$now Switch on (sun down)"
+    raspi-gpio set $gpio_pin dl        # Switch on
+  }
+  [[ $now -eq $time_off ]] && {        # @ time off
+    echo "$now Switch off (time off)"
+    raspi-gpio set $gpio_pin dh        # Switch off
+  }
 }
