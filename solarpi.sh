@@ -1,12 +1,19 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-# Check config file
+# Load config file
 [[ -f solarpi.conf ]] && . solarpi.conf || . solarpi.template.conf
 
 # Current time
 now=$(date "+%H%M")
 now=$((10#$now))
+
+# Setup GPIO pin
+[[ "$1" = "-s" ]] && {
+  echo "$now Setting up GPIO pin $gpio_pin"
+  raspi-gpio set $gpio_pin op  # Setup GPIO pin as Output
+  raspi-gpio set $gpio_pin dh  # Set GPIO pin High (switch = off)
+}
 
 # Get weather data
 [[ "$1" = "-u" || ! -f weather_data.json ]] && {
@@ -20,10 +27,7 @@ su=$((10#${su//:/}))  # Remove semicolon and leading zeros
 sd=$(cat weather_data.json | jq -r ".liveweer[0].sunder")
 sd=$((10#${sd//:/}))  # Remove semicolon and leading zeros
 
-# Setup GPIO pin
-raspi-gpio set $gpio_pin op  # Setup GPIO pin as Output
-raspi-gpio set $gpio_pin dh  # Set GPIO pin High (switch = off)
-
+# Switch on/off
 [[ $su -gt $time_on ]] && {            # Sun up after time on
   [[ $now -eq $time_on ]] && {         # @ time on
     echo "$now Switch on (time on)"
