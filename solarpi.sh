@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 
 # Current time
 now=$(date "+%H%M")
-now=${now#0}
+now=$((10#$now))
 
 # Get weather data
 [[ "$1" = "-u" || ! -f weather_data.json ]] && {
@@ -16,11 +16,9 @@ now=${now#0}
 
 # Get/set sun up/down + convert to number
 su=$(cat weather_data.json | jq -r ".liveweer[0].sup")
-su=${su//:/}
-su=${su#0}
+su=$((10#${su//:/}))  # Remove semicolon and leading zeros
 sd=$(cat weather_data.json | jq -r ".liveweer[0].sunder")
-sd=${sd//:/}
-sd=${sd#0}
+sd=$((10#${sd//:/}))  # Remove semicolon and leading zeros
 
 # Setup GPIO pin
 raspi-gpio set $gpio_pin op  # Setup GPIO pin as Output
