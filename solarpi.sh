@@ -9,21 +9,27 @@ now=$(date "+%H%M")  # Get time formatted as number
 now=$((10#$now))     # Convert string to base 10 number
 
 # Get GPIO pin state
-pin_state=$(raspi-gpio get $gpio_pin)  # Get command output
-pin_state=${pin_state// /}             # Remove spaces
-pin_state=(${pin_state//func=/ })      # Replace func= with a space and convert to array
-pin_state=${pin_state[1]}              # Get 2nd array element (= state)
+pin_get=($(raspi-gpio get $gpio_pin))  # Get command output as array
+pin_state=${pin_get[4]}                # Get 5th array element
+pin_state=${pin_state//func=/}         # Remove func=
 
 # Setup GPIO pin
 [[ "$pin_state" != "OUTPUT" ]] && {
-  echo "$now Setting up GPIO pin $gpio_pin"
+  echo "$now Setting up GPIO pin $gpio_pin with state off"
   raspi-gpio set $gpio_pin op  # Setup GPIO pin as Output
   raspi-gpio set $gpio_pin dh  # Set GPIO pin High (switch = off)
+  exit
 }
 
-# Parameter switch on/off
-[[ "$1" = "-on"  ]] && raspi-gpio set $gpio_pin dl && echo "$now Switch on (manual)"
-[[ "$1" = "-off" ]] && raspi-gpio set $gpio_pin dh && echo "$now Switch off (manual)"
+# Parameter switch on/off/state
+[[ "$1" = "-on"  ]] && raspi-gpio set $gpio_pin dl && echo "$now Switch on (manual)" && exit
+[[ "$1" = "-off" ]] && raspi-gpio set $gpio_pin dh && echo "$now Switch off (manual)" && exit
+[[ "$1" = "-state" ]] && {
+  switch_state=${pin_get[2]}             # Get 3rd array element
+  switch_state=${switch_state//level=/}  # Remove level=
+  [[ switch_state -eq 1 ]] && switch_state=Off || switch_state=On
+  echo "$now State: $switch_state" && exit
+}
 
 # Get weather data (on: time, parameter, missing file)
 [[ $now -eq $time_update_weather || "$1" = "-u" || ! -f weather_data.json ]] && {
