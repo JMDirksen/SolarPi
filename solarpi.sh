@@ -5,18 +5,28 @@ cd "$(dirname "$0")"
 [[ -f solarpi.conf ]] && . solarpi.conf || . solarpi.template.conf
 
 # Current time
-now=$(date "+%H%M")
-now=$((10#$now))
+now=$(date "+%H%M")  # Get time formatted as number
+now=$((10#$now))     # Convert string to base 10 number
+
+# Get GPIO pin state
+pin_state=$(raspi-gpio get $gpio_pin)  # Get command output
+pin_state=${pin_state// /}             # Remove spaces
+pin_state=(${pin_state//func=/ })      # Replace func= with a space and convert to array
+pin_state=${pin_state[1]}              # Get 2nd array element (= state)
 
 # Setup GPIO pin
-[[ "$1" = "-s" ]] && {
+[[ "$pin_state" != "OUTPUT" ]] && {
   echo "$now Setting up GPIO pin $gpio_pin"
   raspi-gpio set $gpio_pin op  # Setup GPIO pin as Output
   raspi-gpio set $gpio_pin dh  # Set GPIO pin High (switch = off)
 }
 
-# Get weather data
-[[ "$1" = "-u" || ! -f weather_data.json ]] && {
+# Parameter switch on/off
+[[ "$1" = "-on"  ]] && raspi-gpio set $gpio_pin dl && echo "$now Switch on (manual)"
+[[ "$1" = "-off" ]] && raspi-gpio set $gpio_pin dh && echo "$now Switch off (manual)"
+
+# Get weather data (on: time, parameter, missing file)
+[[ $now -eq $time_update_weather || "$1" = "-u" || ! -f weather_data.json ]] && {
   echo "$now Getting weather data for $weather_api_location"
   curl -s -o weather_data.json $weather_api_url
 }
