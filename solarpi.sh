@@ -21,16 +21,6 @@ pin_state=${pin_state//func=/}         # Remove func=
   exit
 }
 
-# Parameter switch on/off/state
-[[ "$1" = "-on"  ]] && raspi-gpio set $gpio_pin dl && echo "$now Switch on (manual)" && exit
-[[ "$1" = "-off" ]] && raspi-gpio set $gpio_pin dh && echo "$now Switch off (manual)" && exit
-[[ "$1" = "-state" ]] && {
-  switch_state=${pin_get[2]}             # Get 3rd array element
-  switch_state=${switch_state//level=/}  # Remove level=
-  [[ switch_state -eq 1 ]] && switch_state=Off || switch_state=On
-  echo "$now State: $switch_state" && exit
-}
-
 # Get weather data (on: time, parameter, missing file)
 [[ $now -eq $time_update_weather || "$1" = "-u" || ! -f weather_data.json ]] && {
   echo "$now Getting weather data for $weather_api_location"
@@ -42,6 +32,17 @@ su=$(cat weather_data.json | jq -r ".liveweer[0].sup")
 su=$((10#${su//:/}))  # Remove semicolon and leading zeros
 sd=$(cat weather_data.json | jq -r ".liveweer[0].sunder")
 sd=$((10#${sd//:/}))  # Remove semicolon and leading zeros
+
+# Parameter switch on/off/state
+[[ "$1" = "-on"  ]] && raspi-gpio set $gpio_pin dl && echo "$now Switch on (manual)" && exit
+[[ "$1" = "-off" ]] && raspi-gpio set $gpio_pin dh && echo "$now Switch off (manual)" && exit
+[[ "$1" = "-state" ]] && {
+  switch_state=${pin_get[2]}             # Get 3rd array element
+  switch_state=${switch_state//level=/}  # Remove level=
+  [[ switch_state -eq 1 ]] && switch_state=Off || switch_state=On
+  echo "$now Switch: $switch_state  Sun up/down: $su/$sd ($weather_api_location)"
+  exit
+}
 
 # Switch on/off
 [[ $su -gt $time_on ]] && {            # Sun up after time on
