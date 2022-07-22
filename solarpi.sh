@@ -28,6 +28,13 @@ pin_state=${pin_state//func=/}         # Remove func=
 [[ $now -eq $time_update_weather || "$1" = "-u" || ! -f weather_data.json ]] && {
   echo "$date $now Getting weather data for $weather_api_location"
   curl -s -o weather_data.json $weather_api_url
+  [[ $(cat weather_data.json | jq -r ".liveweer[0].plaats") != $weather_api_location ]] && {
+    echo "$date $now Error in weather data:"
+    cat weather_data.json
+    echo
+    rm weather_data.json
+    exit
+  }
 }
 
 # Get/set sun up/down + convert to number
